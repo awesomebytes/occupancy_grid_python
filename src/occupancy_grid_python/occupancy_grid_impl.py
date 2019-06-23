@@ -93,8 +93,10 @@ class OccupancyGridManager(object):
         return world_x, world_y
 
     def get_costmap_x_y(self, world_x, world_y):
-        costmap_x = int((world_x - self.origin.position.x) / self.resolution)
-        costmap_y = int((world_y - self.origin.position.y) / self.resolution)
+        costmap_x = int(
+            round((world_x - self.origin.position.x) / self.resolution))
+        costmap_y = int(
+            round((world_y - self.origin.position.y) / self.resolution))
         return costmap_x, costmap_y
 
     def get_cost_from_world_x_y(self, x, y):
@@ -196,7 +198,6 @@ class OccupancyGridManager(object):
                     if (i, j) != (0, 0) and not coords.get((i, j), False):
                         coords[(i, j)] = True
                         yield (i, j)
-
 
         coords_to_explore = create_radial_offsets_coords(max_radius)
 
