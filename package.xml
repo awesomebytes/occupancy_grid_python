@@ -7,6 +7,8 @@
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
+  <author email="Sammy.Pfeiffer@student.uts.edu.au">Sammy Pfeiffer</author>
+  <author email="Su.W.Leong@student.uts.edu.au">Suwen Leong</author>
   <maintainer email="Sammy.Pfeiffer@student.uts.edu.au">Sammy Pfeiffer</maintainer>
 
   <license>BSD</license>
