@@ -4,6 +4,7 @@ import rospy
 from nav_msgs.msg import OccupancyGrid
 from map_msgs.msg import OccupancyGridUpdate
 import numpy as np
+from itertools import product
 
 """
 Class to deal with OccupancyGrid in Python
@@ -123,6 +124,101 @@ class OccupancyGridManager(object):
         else:
             return False
 
+    def get_closest_cell_under_cost(self, x, y, cost_threshold, max_radius):
+        """
+        Looks from closest to furthest in a circular way for the first cell
+        with a cost under cost_threshold up until a distance of max_radius,
+        useful to find closest free cell.
+        returns -1, -1 , -1 if it was not found.
+
+        :param x int: x coordinate to look from
+        :param y int: y coordinate to look from
+        :param cost_threshold int: maximum threshold to look for
+        :param max_radius int: maximum number of cells around to check
+        """
+        return self._get_closest_cell_arbitrary_cost(
+            x, y, cost_threshold, max_radius, bigger_than=False)
+
+    def get_closest_cell_over_cost(self, x, y, cost_threshold, max_radius):
+        """
+        Looks from closest to furthest in a circular way for the first cell
+        with a cost over cost_threshold up until a distance of max_radius,
+        useful to find closest obstacle.
+        returns -1, -1, -1 if it was not found.
+
+        :param x int: x coordinate to look from
+        :param y int: y coordinate to look from
+        :param cost_threshold int: minimum threshold to look for
+        :param max_radius int: maximum number of cells around to check
+        """
+        return self._get_closest_cell_arbitrary_cost(
+            x, y, cost_threshold, max_radius, bigger_than=True)
+
+    def _get_closest_cell_arbitrary_cost(self, x, y,
+                                         cost_threshold, max_radius,
+                                         bigger_than=False):
+
+        # Check the actual goal cell
+        try:
+            cost = self.get_cost_from_costmap_x_y(x, y)
+        except IndexError:
+            pass
+
+        if bigger_than:
+            if cost > cost_threshold:
+                return x, y, cost
+        else:
+            if cost < cost_threshold:
+                return x, y, cost
+
+        def create_coords_matrix(radius):
+            """
+            Creates an ordered by radius (without repetition)
+            list of coordinates to explore around an initial point 0, 0
+
+            For example, radius 2 looks like:
+            [(-1, -1), (-1, 0), (-1, 1), (0, -1),  # from radius 1
+            (0, 1), (1, -1), (1, 0), (1, 1),  # from radius 1
+            (-2, -2), (-2, -1), (-2, 0), (-2, 1),
+            (-2, 2), (-1, -2), (-1, 2), (0, -2),
+            (0, 2), (1, -2), (1, 2), (2, -2),
+            (2, -1), (2, 0), (2, 1), (2, 2)]
+            """
+            coords = []
+            # iterate increasing over every radius value...
+            for r in range(1, radius + 1):
+                # for this radius value...
+                tmp_coords = list(product(range(-r, r + 1), repeat=2))
+                # print("r: " + str(r) + " tmp_coords: " + str(tmp_coords))
+                # only add new coordinates
+                for i, j in tmp_coords:
+                    if (i, j) != (0, 0) and (i, j) not in coords:
+                        coords.append((i, j))
+            return coords
+
+        coords_to_explore = create_coords_matrix(max_radius)
+
+        for idx, radius_coords in enumerate(coords_to_explore):
+            # for coords in radius_coords:
+            tmp_x, tmp_y = radius_coords
+            # print("Checking coords: " +
+            #       str((x + tmp_x, y + tmp_y)) +
+            #       " (" + str(idx) + " / " + str(len(coords_to_explore)) + ")")
+            try:
+                cost = self.get_cost_from_costmap_x_y(x + tmp_x, y + tmp_y)
+            # If accessing out of grid, just ignore
+            except IndexError:
+                pass
+            if bigger_than:
+                if cost > cost_threshold:
+                    return x + tmp_x, y + tmp_y, cost
+
+            else:
+                if cost < cost_threshold:
+                    return x + tmp_x, y + tmp_y, cost
+
+        return -1, -1, -1
+
 
 if __name__ == '__main__':
     rospy.init_node('test_occ_grid')
@@ -183,4 +279,3 @@ if __name__ == '__main__':
             accum += str(ogm.get_cost_from_costmap_x_y(i, j)) + ' '
             # print(ogm.get_cost_from_costmap_x_y(i, 270))
         print accum
-    rospy.spin()
