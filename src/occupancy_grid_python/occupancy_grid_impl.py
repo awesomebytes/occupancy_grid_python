@@ -171,10 +171,10 @@ class OccupancyGridManager(object):
             if cost < cost_threshold:
                 return x, y, cost
 
-        def create_coords_matrix(radius):
+        def create_radial_offsets_coords(radius):
             """
             Creates an ordered by radius (without repetition)
-            list of coordinates to explore around an initial point 0, 0
+            generator of coordinates to explore around an initial point 0, 0
 
             For example, radius 2 looks like:
             [(-1, -1), (-1, 0), (-1, 1), (0, -1),  # from radius 1
@@ -184,19 +184,21 @@ class OccupancyGridManager(object):
             (0, 2), (1, -2), (1, 2), (2, -2),
             (2, -1), (2, 0), (2, 1), (2, 2)]
             """
-            coords = []
+            # We store the previously given coordinates to not repeat them
+            # we use a Dict as to take advantage of its hash table to make it more efficient
+            coords = {}
             # iterate increasing over every radius value...
             for r in range(1, radius + 1):
-                # for this radius value...
-                tmp_coords = list(product(range(-r, r + 1), repeat=2))
-                # print("r: " + str(r) + " tmp_coords: " + str(tmp_coords))
-                # only add new coordinates
+                # for this radius value... (both product and range are generators too)
+                tmp_coords = product(range(-r, r + 1), repeat=2)
+                # only yield new coordinates
                 for i, j in tmp_coords:
-                    if (i, j) != (0, 0) and (i, j) not in coords:
-                        coords.append((i, j))
-            return coords
+                    if (i, j) != (0, 0) and not coords.get((i, j), False):
+                        coords[(i, j)] = True
+                        yield (i, j)
 
-        coords_to_explore = create_coords_matrix(max_radius)
+
+        coords_to_explore = create_radial_offsets_coords(max_radius)
 
         for idx, radius_coords in enumerate(coords_to_explore):
             # for coords in radius_coords:

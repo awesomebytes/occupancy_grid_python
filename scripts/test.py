@@ -264,3 +264,11 @@ if __name__ == '__main__':
         0, 0, 253, 5)
     rospy.loginfo("closest x y cost over: " +
                   str((closest_x, closest_y, cost)))
+
+
+    rospy.loginfo("radius 40 (would be 2m at 0.05 resolution)")
+    rospy.loginfo("Getting closest x y over (look point: " + str((0, 0)))
+    closest_x, closest_y, cost = ogm.get_closest_cell_over_cost(
+        0, 0, 253, 5)
+    rospy.loginfo("closest x y cost over: " +
+                  str((closest_x, closest_y, cost)))
