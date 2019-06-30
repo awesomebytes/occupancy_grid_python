@@ -164,7 +164,7 @@ class OccupancyGridManager(object):
         try:
             cost = self.get_cost_from_costmap_x_y(x, y)
         except IndexError:
-            pass
+            return None
 
         if bigger_than:
             if cost > cost_threshold:
