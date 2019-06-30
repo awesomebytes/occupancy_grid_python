@@ -65,6 +65,7 @@ class OccupancyGridManager(object):
         return self._reference_frame
 
     def _occ_grid_cb(self, data):
+        rospy.logwarn("Got a full OccupancyGrid update")
         self._occ_grid_metadata = data.info
         # Contains resolution, width & height
         # np.set_printoptions(threshold=99999999999, linewidth=200)
@@ -77,6 +78,7 @@ class OccupancyGridManager(object):
         #                            dtype=np.int8)
 
     def _occ_grid_update_cb(self, data):
+        rospy.logwarn("Got a partial OccupancyGrid update")
         # x, y origin point of the update
         # width and height of the update
         # data, the udpdate
