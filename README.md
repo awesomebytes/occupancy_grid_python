@@ -17,8 +17,8 @@ ogm = OccupancyGridManager('/move_base/global_costmap/costmap',
 # Now you can do basic operations
 print(ogm.resolution)
 # Note that OccupancyGrid data starts on lower left corner (if seen as an image)
-# width / X is from bottom to top
-# height / Y is from left to right
+# width / X is from left to right
+# height / Y is from bottom to top
 print(ogm.width)
 print(ogm.height)
 print(ogm.origin)  # geometry_msgs/Pose
@@ -100,3 +100,19 @@ safe_x, safe_y, cost_safe = ogm.get_closest_cell_under_cost(costmap_x, costmap_y
 # Maybe we should send a goal to (safe_x, safe_y instead)
 
 ```
+
+## Testing scripts
+This package should have proper testing implemented (_TODO_ but would love help) there are a few scripts in the scripts folder that may help:
+* [click_occ_grid.py](scripts/click_occ_grid.py): If you open Rviz and visualize `/map` with a Map viewer, you can click on parts of the map using the `Publish Point` feature of Rviz and it will print on the screen the cost of the cell and the costmap location, e.g.:
+```bash
+[INFO] [1604299071.107875]: Which is in costmap coords (x, y): 121, 125
+[INFO] [1604299074.067747]: Cost at (x, y): 2.25541591644, -1.0420165062 is 100
+[INFO] [1604299074.070528]: Which is in costmap coords (x, y): 120, 126
+```
+
+* [click_occ_grid_cell_cost.py](scripts/click_occ_grid_cell_cost.py): Similar to the previous, but also publishes a `PointStamped` in the `/closest_cell_cost` topic showing which is the closest cell with a cost over 99 (black in map, e.g. wall).
+
+* [simple_test.py](scripts/simple_test.py): Publishes a hand-made map and checks that minimal functionality works.
+
+* [test.py](scripts/test.py): Publishes some gathered-from-real-use-case map and costmaps and runs most if not all methods through them. This should be ported into tests, really.
+

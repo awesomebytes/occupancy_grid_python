@@ -17,9 +17,6 @@ Author: Sammy Pfeiffer <Sammy.Pfeiffer at student.uts.edu.au>
 class OccupancyGridManager(object):
     def __init__(self, topic, subscribe_to_updates=False):
         # OccupancyGrid starts on lower left corner
-        # and width / X is from bottom to top
-        # and height / Y is from left to right
-        # This makes no sense to me, but it is what it is
         self._grid_data = None
         self._occ_grid_metadata = None
         self._reference_frame = None
@@ -27,6 +24,7 @@ class OccupancyGridManager(object):
                                      self._occ_grid_cb,
                                      queue_size=1)
         if subscribe_to_updates:
+            rospy.loginfo("Subscribing to updates!")
             self._updates_sub = rospy.Subscriber(topic + '_updates',
                                                  OccupancyGridUpdate,
                                                  self._occ_grid_update_cb,
@@ -34,14 +32,15 @@ class OccupancyGridManager(object):
         rospy.loginfo("Waiting for '" +
                       str(self._sub.resolved_name) + "'...")
         while self._occ_grid_metadata is None and \
-                self._grid_data is None:
+                self._grid_data is None and not rospy.is_shutdown():
             rospy.sleep(0.1)
         rospy.loginfo("OccupancyGridManager for '" +
                       str(self._sub.resolved_name) +
-                      "'initialized!")
-        rospy.loginfo("Height (x): " + str(self.height) +
-                      " Width (y): " + str(self.width) +
-                      " reference_frame: " + str(self.reference_frame) +
+                      "' initialized!")
+        rospy.loginfo("Height (y / rows): " + str(self.height) +
+                      ", Width (x / columns): " + str(self.width) +
+                      ", starting from bottom left corner of the grid. " + 
+                      " Reference_frame: " + str(self.reference_frame) +
                       " origin: " + str(self.origin))
 
     @property
@@ -65,28 +64,29 @@ class OccupancyGridManager(object):
         return self._reference_frame
 
     def _occ_grid_cb(self, data):
-        rospy.logdebug("Got a full OccupancyGrid update")
+        rospy.loginfo("Got a full OccupancyGrid update")
         self._occ_grid_metadata = data.info
         # Contains resolution, width & height
         # np.set_printoptions(threshold=99999999999, linewidth=200)
+        # data comes in row-major order http://docs.ros.org/en/melodic/api/nav_msgs/html/msg/OccupancyGrid.html
+        # first index is the row, second index the column
         self._grid_data = np.array(data.data,
                                    dtype=np.int8).reshape(data.info.height,
                                                           data.info.width)
         self._reference_frame = data.header.frame_id
-        # self._grid_data = np.zeros((data.info.height,
-        #                             data.info.width),
-        #                            dtype=np.int8)
+        # print(self._grid_data)
 
     def _occ_grid_update_cb(self, data):
-        rospy.logdebug("Got a partial OccupancyGrid update")
+        rospy.loginfo("Got a partial OccupancyGrid update")
         # x, y origin point of the update
         # width and height of the update
-        # data, the udpdate
+        # data, the update
+        # data comes in row-major order http://docs.ros.org/en/melodic/api/nav_msgs/html/msg/OccupancyGrid.html
+        # first index is the row, second index the column
         data_np = np.array(data.data,
                            dtype=np.int8).reshape(data.height, data.width)
         self._grid_data[data.y:data.y +
                         data.height, data.x:data.x + data.width] = data_np
-        # print("grid update:")
         # print(self._grid_data)
 
     def get_world_x_y(self, costmap_x, costmap_y):
@@ -116,14 +116,16 @@ class OccupancyGridManager(object):
 
     def get_cost_from_costmap_x_y(self, x, y):
         if self.is_in_gridmap(x, y):
-            return self._grid_data[x][y]
+            # data comes in row-major order http://docs.ros.org/en/melodic/api/nav_msgs/html/msg/OccupancyGrid.html
+            # first index is the row, second index the column
+            return self._grid_data[y][x]
         else:
             raise IndexError(
                 "Coordinates out of gridmap, x: {}, y: {} must be in between: [0, {}], [0, {}]".format(
                     x, y, self.height, self.width))
 
     def is_in_gridmap(self, x, y):
-        if -1 < x < self.height and -1 < y < self.width:
+        if -1 < x < self.width and -1 < y < self.height:
             return True
         else:
             return False
