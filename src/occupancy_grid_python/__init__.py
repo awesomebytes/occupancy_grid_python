@@ -1,1 +1,1 @@
-from occupancy_grid_impl import OccupancyGridManager
+from .occupancy_grid_impl import OccupancyGridManager

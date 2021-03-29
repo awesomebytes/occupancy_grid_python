@@ -285,4 +285,4 @@ if __name__ == '__main__':
         for j in l:
             accum += str(ogm.get_cost_from_costmap_x_y(i, j)) + ' '
             # print(ogm.get_cost_from_costmap_x_y(i, 270))
-        print accum
+        print(accum)
